@@ -61,7 +61,7 @@ save() {
 	[ ! -f "${patch}" ] || err 1 "A patch named $1 already exists"
 	shift
 	files="$@"
-	changes=$(svn st -q)
+	changes=$(svn st -q ${files})
 	[ "${changes}" != "" ] || err 1 "No changes to save"
 	svn diff --git ${files:-.} > "${patch}"
 	svn revert --depth=infinity ${files:-.}
