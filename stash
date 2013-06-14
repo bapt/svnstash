@@ -1,0 +1,158 @@
+#!/bin/sh -e
+#
+# Copyright (c) 2013 Baptiste Daroussin <bapt@FreeBSD.org>
+# All rights reserved.
+# 
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+# 
+# THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+# OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+# SUCH DAMAGE.
+
+err() {
+	out=$1
+	shift
+	echo "$@" >&2
+	exit $out
+}
+
+
+usage() {
+	echo "Usage: $0 cmd
+
+Available cmds:
+ls      - display all stashed patshes
+show    - view a given patch
+save    - save a new patch
+apply   - apply a given patch
+rm      - delete a given patch from the queue
+pop     - apply a patch and delete it
+push    - push on freefall
+help    - show help" >&2
+}
+
+export LC_ALL=C
+
+[ -x `which svn` ] || err 1 "svn is not installed on this system"
+svnrp=$(svn info 2>&1 | sed -n 's/Working Copy Root Path: \(.*\)/\1/p')
+[ -d "${svnrp}" ] || err 1 "should be used inside a working copy"
+[ -w "${svnrp}/.svn" ] || err 1 "no write access to ${svnrp}/.svn"
+patchdir=${svnrp}/.svn/patches
+mkdir -p "${patchdir}" || err 1 "Impossible to create the patch directory"
+
+save() {
+	[ $# -ge 1 ] || err 1 "Usage: stash save <name> [files...]"
+	patch="${patchdir}/$1.patch"
+	[ ! -f "${patch}" ] || err 1 "A patch named $1 already exists"
+	shift
+	files="$@"
+	changes=$(svn st -q)
+	[ "${changes}" != "" ] || err 1 "No changes to save"
+	svn diff --git ${files:-.} > "${patch}"
+	svn revert --depth=infinity ${files:-.}
+	echo "stashed"
+	exit 0
+}
+
+list() {
+	for p in ${patchdir}/*.patch; do
+		[ "$p" = "${patchdir}/*.patch" ] && break
+		p=${p##*/}
+		echo ${p%.*}
+	done
+	exit 0
+}
+
+show() {
+	[ $# -eq 1 ] || err 1 "Usage: stash show <name>"
+	patch="${patchdir}/$1.patch"
+	[ -f "${patch}" ] || err 1 "$1: no such patch"
+	less "${patch}"
+	exit 0
+}
+
+apply() {
+	[ $# -eq 1 ] || err 1 "Usage: stash apply <name>"
+	patch="${patchdir}/$1.patch"
+	[ -f "${patch}" ] || err 1 "$1: no such patch"
+	cd ${svnrp}
+	svn patch --strip 1 "${patch}"
+	exit 0
+}
+
+remove() {
+	[ $# -eq 1 ] || err 1 "Usage: stash rm <name>"
+	patch="${patchdir}/$1.patch"
+	[ -f "${patch}" ] || err 1 "$1: no such patch"
+	rm -f "${patch}"
+	exit 0
+}
+
+pop() {
+	[ $# -eq 1 ] || err 1 "Usage: stash pop <name>"
+	patch="${patchdir}/$1.patch"
+	[ -f "${patch}" ] || err 1 "$1: no such patch"
+	cd ${svnrp}
+	svn patch --strip 1 "${patch}"
+	rm -f "${patch}"
+	exit 0
+}
+
+push() {
+	[ $# -eq 1 ] || err 1 "Usage: stash pop <name>"
+	patch="${patchdir}/$1.patch"
+	[ -f "${patch}" ] || err 1 "$1: no such patch"
+	cd ${svnrp}
+	scp "${patch}" freefall.freebsd.org:public_html
+	exit 0
+}
+
+case $1 in
+ls)
+	shift
+	list "$@"
+	;;
+show)
+	shift
+	show "$@"
+	;;
+save)
+	shift
+	save "$@"
+	;;
+apply)
+	shift
+	apply "$@"
+	;;
+rm)
+	shift
+	remove "$@"
+	;;
+pop)
+	shift
+	pop "$@"
+	;;
+push)
+	shift
+	push "$@"
+	;;
+*)
+	usage
+	exit 1
+	;;
+esac
