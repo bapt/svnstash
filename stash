@@ -43,6 +43,7 @@ apply   - apply a given patch
 rm      - delete a given patch from the queue
 pop     - apply a patch and delete it
 push    - push patches to a remote site
+sync    - synchornize the stash directory is using a VCS
 help    - show help" >&2
 }
 
