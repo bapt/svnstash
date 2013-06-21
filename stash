@@ -56,10 +56,14 @@ patchdir=${svnrp}/.svn/patches
 mkdir -p "${patchdir}" || err 1 "Impossible to create the patch directory"
 
 save() {
-	[ $# -ge 1 ] || err 1 "Usage: stash save <name> [files...]"
+	[ $# -ge 1 ] || err 1 "Usage: stash save [-u] <name> [files...]"
 	patch="${patchdir}/$1.patch"
-	[ ! -f "${patch}" ] || err 1 "A patch named $1 already exists"
 	shift
+	if [ "$1" = "-u" ]; then
+		shift
+	else
+		[ ! -f "${patch}" ] || err 1 "A patch named ${patch} already exists"
+	fi
 	files="$@"
 	changes=$(svn st -q ${files})
 	[ "${changes}" != "" ] || err 1 "No changes to save"
