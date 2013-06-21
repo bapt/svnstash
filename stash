@@ -42,7 +42,7 @@ save    - save a new patch
 apply   - apply a given patch
 rm      - delete a given patch from the queue
 pop     - apply a patch and delete it
-push    - push on freefall
+push    - push patches to a remote site
 help    - show help" >&2
 }
 
@@ -135,7 +135,7 @@ pop() {
 }
 
 push() {
-	[ $# -eq 1 ] || err 1 "Usage: stash pop <name>"
+	[ $# -eq 1 ] || err 1 "Usage: stash push <name>"
 	patch="${patchdir}/$1.patch"
 	[ -f "${patch}" ] || err 1 "$1: no such patch"
 	cd ${svnrp}
@@ -144,7 +144,7 @@ push() {
 }
 
 sync() {
-	[ -n "${VCS}" ] || err 1 "the stash is not being versionned"
+	[ -n "${VCS}" ] || err 1 "the stash is not being versioned"
 	cd ${patchdir}
 	case ${VCS} in
 	hg) hg pull -u && hg push ;;
