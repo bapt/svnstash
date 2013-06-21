@@ -55,27 +55,29 @@ svnrp=$(svn info 2>&1 | sed -n 's/Working Copy Root Path: \(.*\)/\1/p')
 patchdir=${svnrp}/.svn/patches
 mkdir -p "${patchdir}" || err 1 "Impossible to create the patch directory"
 [ -d ${patchdir}/.svn ] && VCS="svn"
-[ -d ${patchdir}/.fossil ] && VCS="fossil"
+[ -f ${patchdir}/.fslckout ] && VCS="fossil"
 [ -d ${patchdir}/.git ] && VCS="git"
 [ -d ${patchdir}/.hg ] && VCS="hg"
 
+
 save() {
 	[ $# -ge 1 ] || err 1 "Usage: stash save [-u] <name> [files...]"
+	name=$1
 	patch="${patchdir}/$1.patch"
 	shift
 	if [ "$1" = "-u" ]; then
 		update=yes
 		shift
 	else
-		[ ! -f "${patch}" ] || err 1 "A patch named ${patch} already exists"
+		[ ! -f "${patch}" ] || err 1 "A patch named ${name} already exists"
 	fi
 	files="$@"
 	changes=$(svn st -q ${files})
-	[ "${changes}" != "" ] || err 1 "No changes to save"
+	[ "${changes}" != "" ] || err 1 "No changes to saved"
 	svn diff --git ${files:-.} > "${patch}"
 	svn revert --depth=infinity ${files:-.}
 	svn st ${files} | awk '/^?/ { print $1 }' | xargs rm -f
-	if [ -n "${update}" && -n "${VCS}" ]; then
+	if [ -n "${update}" -a -n "${VCS}" ]; then
 		(cd ${patchdir}; ${VCS} commit)
 	else
 		(cd ${patchdir}; ${VCS} add ${patch##*/}; ${VCS} commit)
@@ -115,6 +117,10 @@ remove() {
 	patch="${patchdir}/$1.patch"
 	[ -f "${patch}" ] || err 1 "$1: no such patch"
 	rm -f "${patch}"
+	rm -f "${patch}"
+	if [ -n "${VCS}" ]; then
+		(cd ${patchdir}; ${VCS} rm ${patch##*/}; ${VCS} commit)
+	fi
 	exit 0
 }
 
@@ -124,10 +130,7 @@ pop() {
 	[ -f "${patch}" ] || err 1 "$1: no such patch"
 	cd ${svnrp}
 	svn patch --strip 1 "${patch}"
-	rm -f "${patch}"
-	if [ -n "${VCS}" ]; then
-		(cd ${patchdir}; ${VCS} rm ${patch##*/}; ${VCS} commit)
-	fi
+	remove $1
 	exit 0
 }
 
@@ -142,6 +145,7 @@ push() {
 
 sync() {
 	[ -n "${VCS}" ] || err 1 "the stash is not being versionned"
+	cd ${patchdir}
 	case ${VCS} in
 	hg) hg pull -u && hg push ;;
 	git) git pull -r && git push ;;
