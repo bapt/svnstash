@@ -54,12 +54,17 @@ svnrp=$(svn info 2>&1 | sed -n 's/Working Copy Root Path: \(.*\)/\1/p')
 [ -w "${svnrp}/.svn" ] || err 1 "no write access to ${svnrp}/.svn"
 patchdir=${svnrp}/.svn/patches
 mkdir -p "${patchdir}" || err 1 "Impossible to create the patch directory"
+[ -d ${patchdir}/.svn ] && VCS="svn"
+[ -d ${patchdir}/.fossil ] && VCS="fossil"
+[ -d ${patchdir}/.git ] && VCS="git"
+[ -d ${patchdir}/.hg ] && VCS="hg"
 
 save() {
 	[ $# -ge 1 ] || err 1 "Usage: stash save [-u] <name> [files...]"
 	patch="${patchdir}/$1.patch"
 	shift
 	if [ "$1" = "-u" ]; then
+		update=yes
 		shift
 	else
 		[ ! -f "${patch}" ] || err 1 "A patch named ${patch} already exists"
@@ -70,6 +75,11 @@ save() {
 	svn diff --git ${files:-.} > "${patch}"
 	svn revert --depth=infinity ${files:-.}
 	svn st ${files} | awk '/^?/ { print $1 }' | xargs rm -f
+	if [ -n "${update}" && -n "${VCS}" ]; then
+		(cd ${patchdir}; ${VCS} commit)
+	else
+		(cd ${patchdir}; ${VCS} add ${patch##*/}; ${VCS} commit)
+	fi
 	echo "stashed"
 	exit 0
 }
@@ -115,6 +125,9 @@ pop() {
 	cd ${svnrp}
 	svn patch --strip 1 "${patch}"
 	rm -f "${patch}"
+	if [ -n "${VCS}" ]; then
+		(cd ${patchdir}; ${VCS} rm ${patch##*/}; ${VCS} commit)
+	fi
 	exit 0
 }
 
@@ -125,6 +138,16 @@ push() {
 	cd ${svnrp}
 	scp "${patch}" freefall.freebsd.org:public_html
 	exit 0
+}
+
+sync() {
+	[ -n "${VCS}" ] || err 1 "the stash is not being versionned"
+	case ${VCS} in
+	hg) hg pull -u && hg push ;;
+	git) git pull -r && git push ;;
+	fossil) fossil sync && fossil update ;;
+	*) echo "only dvcs needs the sync command" ;;
+	esac
 }
 
 case $1 in
@@ -155,6 +178,10 @@ pop)
 push)
 	shift
 	push "$@"
+	;;
+sync)
+	shift
+	sync "$@"
 	;;
 *)
 	usage
