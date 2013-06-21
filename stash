@@ -150,7 +150,7 @@ sync() {
 	hg) hg pull -u && hg push ;;
 	git) git pull -r && git push ;;
 	fossil) fossil sync && fossil update ;;
-	*) echo "only dvcs needs the sync command" ;;
+	svn) svn update ;;
 	esac
 	exit 0
 }
