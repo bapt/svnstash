@@ -148,43 +148,14 @@ sync() {
 	fossil) fossil sync && fossil update ;;
 	*) echo "only dvcs needs the sync command" ;;
 	esac
+	exit 0
 }
 
-case $1 in
-ls)
-	shift
-	list "$@"
-	;;
-show)
-	shift
-	show "$@"
-	;;
-save)
-	shift
-	save "$@"
-	;;
-apply)
-	shift
-	apply "$@"
-	;;
-rm)
-	shift
-	remove "$@"
-	;;
-pop)
-	shift
-	pop "$@"
-	;;
-push)
-	shift
-	push "$@"
-	;;
-sync)
-	shift
-	sync "$@"
-	;;
-*)
-	usage
-	exit 1
-	;;
+cmd=$1
+shift
+case $cmd in
+ls) list "$@" ;;
+show|save|apply|pop|push|sync) $cmd "$@" ;;
+rm) remove "$@" ;;
+*) usage ;;
 esac
