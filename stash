@@ -68,8 +68,9 @@ save() {
 	if [ "$1" = "-u" ]; then
 		update=yes
 		shift
-	else
-		[ ! -f "${patch}" ] || err 1 "A patch named ${name} already exists"
+	fi
+	if [ -z "${update}" -a -f "${patch}" ]; then
+		err 1 "A patch named ${name} already exists"
 	fi
 	files="$@"
 	changes=$(svn st -q ${files})
