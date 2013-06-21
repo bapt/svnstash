@@ -65,6 +65,7 @@ save() {
 	[ "${changes}" != "" ] || err 1 "No changes to save"
 	svn diff --git ${files:-.} > "${patch}"
 	svn revert --depth=infinity ${files:-.}
+	svn st ${files} | awk '/^?/ { print $1 }' | xargs rm -f
 	echo "stashed"
 	exit 0
 }
