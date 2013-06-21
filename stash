@@ -61,7 +61,7 @@ mkdir -p "${patchdir}" || err 1 "Impossible to create the patch directory"
 
 
 save() {
-	[ $# -ge 1 ] || err 1 "Usage: stash save [-u] <name> [files...]"
+	[ $# -ge 1 ] || err 1 "Usage: stash save <name> [-u] [files...]"
 	name=$1
 	patch="${patchdir}/$1.patch"
 	shift
