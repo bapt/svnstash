@@ -62,14 +62,18 @@ mkdir -p "${patchdir}" || err 1 "Impossible to create the patch directory"
 
 
 save() {
-	[ $# -ge 1 ] || err 1 "Usage: stash save <name> [-u] [files...]"
+	[ $# -ge 1 ] || err 1 "Usage: stash save <name> [-uk] [files...]"
 	name=$1
 	patch="${patchdir}/$1.patch"
 	shift
-	if [ "$1" = "-u" ]; then
-		update=yes
-		shift
-	fi
+	while getopts 'uk' FLAG; do
+		case ${FLAG} in
+		u) update=yes ;;
+		k) keep=yes ;;
+		esac
+	done
+	shift $(( $OPTIND - 1))
+
 	if [ -z "${update}" -a -f "${patch}" ]; then
 		err 1 "A patch named ${name} already exists"
 	fi
@@ -77,8 +81,10 @@ save() {
 	changes=$(svn st -q ${files})
 	[ "${changes}" != "" ] || err 1 "No changes to saved"
 	svn diff --git ${files:-.} > "${patch}"
-	svn revert --depth=infinity ${files:-.}
-	svn st ${files} | awk '/^?/ { print $1 }' | xargs rm -f
+	if [ -z "${keep}" ]; then
+		svn revert --depth=infinity ${files:-.}
+		svn st ${files} | awk '/^?/ { print $2 }' | xargs rm -f
+	fi
 	if [ -n "${update}" -a -n "${VCS}" ]; then
 		(cd ${patchdir}; ${VCS} commit)
 	else
