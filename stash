@@ -33,7 +33,7 @@ err() {
 
 
 usage() {
-	echo "Usage: $0 cmd
+	echo "Usage: `basename $0` cmd
 
 Available cmds:
 ls      - display all stashed patshes
@@ -62,7 +62,7 @@ mkdir -p "${patchdir}" || err 1 "Impossible to create the patch directory"
 
 
 save() {
-	[ $# -ge 1 ] || err 1 "Usage: stash save <name> [-uk] [files...]"
+	[ $# -ge 1 ] || err 1 "Usage: `basename $0` save <name> [-uk] [files...]"
 	name=$1
 	patch="${patchdir}/$1.patch"
 	shift
@@ -104,7 +104,7 @@ list() {
 }
 
 show() {
-	[ $# -eq 1 ] || err 1 "Usage: stash show <name>"
+	[ $# -eq 1 ] || err 1 "Usage: `basename $0` show <name>"
 	patch="${patchdir}/$1.patch"
 	[ -f "${patch}" ] || err 1 "$1: no such patch"
 	less "${patch}"
@@ -112,7 +112,7 @@ show() {
 }
 
 apply() {
-	[ $# -eq 1 ] || err 1 "Usage: stash apply <name>"
+	[ $# -eq 1 ] || err 1 "Usage: `basename $0` apply <name>"
 	patch="${patchdir}/$1.patch"
 	[ -f "${patch}" ] || err 1 "$1: no such patch"
 	cd ${svnrp}
@@ -121,7 +121,7 @@ apply() {
 }
 
 remove() {
-	[ $# -eq 1 ] || err 1 "Usage: stash rm <name>"
+	[ $# -eq 1 ] || err 1 "Usage: `basename $0` rm <name>"
 	patch="${patchdir}/$1.patch"
 	[ -f "${patch}" ] || err 1 "$1: no such patch"
 	rm -f "${patch}"
@@ -133,7 +133,7 @@ remove() {
 }
 
 pop() {
-	[ $# -eq 1 ] || err 1 "Usage: stash pop <name>"
+	[ $# -eq 1 ] || err 1 "Usage: `basename $0` pop <name>"
 	patch="${patchdir}/$1.patch"
 	[ -f "${patch}" ] || err 1 "$1: no such patch"
 	cd ${svnrp}
@@ -143,7 +143,7 @@ pop() {
 }
 
 push() {
-	[ $# -eq 1 ] || err 1 "Usage: stash push <name>"
+	[ $# -eq 1 ] || err 1 "Usage: `basename $0` push <name>"
 	patch="${patchdir}/$1.patch"
 	[ -f "${patch}" ] || err 1 "$1: no such patch"
 	cd ${svnrp}
