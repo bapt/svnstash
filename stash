@@ -87,7 +87,7 @@ save() {
 	fi
 	if [ -n "${update}" -a -n "${VCS}" ]; then
 		(cd ${patchdir}; ${VCS} commit)
-	else
+	elif [ -n "${VCS}" ]; then
 		(cd ${patchdir}; ${VCS} add ${patch##*/}; ${VCS} commit)
 	fi
 	echo "stashed"
