@@ -114,10 +114,18 @@ show() {
 }
 
 apply() {
-	[ $# -eq 1 ] || err 1 "Usage: `basename $0` apply <name>"
+	[ $# -eq 1 ] && [ $# -ge 1 ] || err 1 "Usage: `basename $0` apply <name>"
 	patch="${patchdir}/$1.patch"
 	[ -f "${patch}" ] || err 1 "$1: no such patch"
-	cd ${svnrp}
+	subd="$2"
+  	dir=""
+  	if [[ -z "${subd// }" ]]; then
+    		dir="${svnrp}"
+  	else
+    		dir="${svnrp}/${subd}"
+  	fi
+	[ -d "${dir}" ] || err 1 "${dir}: no such directory"
+        cd ${dir}
 	svn patch --strip 1 "${patch}"
 	exit 0
 }
@@ -135,20 +143,36 @@ remove() {
 }
 
 pop() {
-	[ $# -eq 1 ] || err 1 "Usage: `basename $0` pop <name>"
+	[ $# -eq 1 ] && [ $# -ge 1 ] || err 1 "Usage: `basename $0` pop <name>"
 	patch="${patchdir}/$1.patch"
 	[ -f "${patch}" ] || err 1 "$1: no such patch"
-	cd ${svnrp}
+	subd="$2"
+  	dir=""
+  	if [[ -z "${subd// }" ]]; then
+    		dir="${svnrp}"
+  	else
+    		dir="${svnrp}/${subd}"
+  	fi
+	[ -d "${dir}" ] || err 1 "${dir}: no such directory"
+        cd ${dir}
 	svn patch --strip 1 "${patch}"
 	remove $1
 	exit 0
 }
 
 push() {
-	[ $# -eq 1 ] || err 1 "Usage: `basename $0` push <name>"
+	[ $# -eq 1 ] && [ $# -ge 1 ] || err 1 "Usage: `basename $0` push <name>"
 	patch="${patchdir}/$1.patch"
 	[ -f "${patch}" ] || err 1 "$1: no such patch"
-	cd ${svnrp}
+	subd="$2"
+  	dir=""
+  	if [[ -z "${subd// }" ]]; then
+    		dir="${svnrp}"
+  	else
+    		dir="${svnrp}/${subd}"
+  	fi
+	[ -d "${dir}" ] || err 1 "${dir}: no such directory"
+        cd ${dir}
 	scp "${patch}" freefall.freebsd.org:public_html
 	exit 0
 }
