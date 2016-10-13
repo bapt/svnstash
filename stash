@@ -135,7 +135,6 @@ remove() {
 	patch="${patchdir}/$1.patch"
 	[ -f "${patch}" ] || err 1 "$1: no such patch"
 	rm -f "${patch}"
-	rm -f "${patch}"
 	if [ -n "${VCS}" ]; then
 		(cd ${patchdir}; ${VCS} rm ${patch##*/}; ${VCS} commit)
 	fi
