@@ -119,7 +119,10 @@ apply() {
 	[ -f "${patch}" ] || err 1 "$1: no such patch"
 	subd="$2"
   	dir=""
-  	if [[ -z "${subd// }" ]]; then
+	## Trim leading and trailing whitespaces
+	subd="${subd##*( )}"
+	subd="${subd%%*( )}"
+  	if [ -z "${subd}" ]; then
     		dir="${svnrp}"
   	else
     		dir="${svnrp}/${subd}"
@@ -147,7 +150,9 @@ pop() {
 	[ -f "${patch}" ] || err 1 "$1: no such patch"
 	subd="$2"
   	dir=""
-  	if [[ -z "${subd// }" ]]; then
+  	subd="${subd##*( )}"
+	subd="${subd%%*( )}"
+  	if [ -z "${subd}" ]; then
     		dir="${svnrp}"
   	else
     		dir="${svnrp}/${subd}"
@@ -165,7 +170,9 @@ push() {
 	[ -f "${patch}" ] || err 1 "$1: no such patch"
 	subd="$2"
   	dir=""
-  	if [[ -z "${subd// }" ]]; then
+  	subd="${subd##*( )}"
+	subd="${subd%%*( )}"
+  	if [ -z "${subd}" ]; then
     		dir="${svnrp}"
   	else
     		dir="${svnrp}/${subd}"
